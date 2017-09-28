@@ -2,7 +2,7 @@ from __future__ import (unicode_literals, print_function, division, absolute_imp
 
 import json
 
-from flask import request, abort, make_response
+from flask import request, make_response
 
 from http2thrift.flask_app import get_app
 from http2thrift.thrift_handler import get_handler, ThriftRequest, ResourceNotFound
@@ -11,13 +11,24 @@ from http2thrift.thrift_handler import get_handler, ThriftRequest, ResourceNotFo
 app = get_app()
 
 
+def json_response(dct, code=200):
+    resp = make_response(json.dumps(dct, indent=4))
+    resp.status_code = code
+    resp.headers['Content-Type'] = 'application/json; charset=utf-8'
+    return resp
+
+
+def error_response(msg, code):
+    return json_response(dict(error=msg), code=code)
+
+
 @app.route('/api/thrift/<path:thrift_file>:<service>:<method>', methods=['POST'])
 def thrift_call(thrift_file, service, method):
     req_dict = json.loads(request.get_data(as_text=True))
     host = req_dict.get('host', '127.0.0.1')
     port = req_dict.get('port', 0)
     if port == 0:
-        pass
+        return error_response('"port" is required', 400)
     args_dict = req_dict.get('args', dict())
 
     req = ThriftRequest(
@@ -26,9 +37,7 @@ def thrift_call(thrift_file, service, method):
 
     try:
         result = get_handler().call(req)
-    except ResourceNotFound:
-        abort(404)
+    except ResourceNotFound as exc:
+        return error_response(str(exc), 404)
     else:
-        resp = make_response(json.dumps(result, indent=4))
-        resp.headers['Content-Type'] = 'application/json; charset=utf-8'
-        return resp
+        return json_response(result)

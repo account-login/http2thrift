@@ -47,7 +47,9 @@ def call_method(service, handler, method, args, result):
 
 def call_method_with_dict(service, handler, method, args_dict):
     if method not in service.thrift_services:
-        raise TApplicationException(TApplicationException.UNKNOWN_METHOD)
+        raise TApplicationException(
+            TApplicationException.UNKNOWN_METHOD,
+            'method "%s" not found in %r' % (method, service))
 
     args = get_args_obj(service, method, args_dict)
     result = get_result_obj(service, method)
@@ -67,6 +69,7 @@ def call_method_wrapped(service, handler, method, args_dict):
     try:
         res = call_method_with_dict(service, handler, method, args_dict)
     except TException as texc:
+        traceback.print_exc()
         exception = texc
     except Exception as exc:
         traceback.print_exc()

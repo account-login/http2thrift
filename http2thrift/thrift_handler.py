@@ -1,5 +1,6 @@
 from __future__ import (unicode_literals, print_function, division, absolute_import)
 
+import os
 from collections import namedtuple
 
 import thriftpy
@@ -37,6 +38,8 @@ class ThriftHandler(object):
 
     def get_file_path(self, thrift_file):
         # type: (str) -> str
+        if not os.path.isfile(thrift_file):
+            raise ResourceNotFound('file not found: %s' % thrift_file)
         # TODO: ...
         return thrift_file
 
