@@ -56,7 +56,13 @@ def call_method_with_dict(service, handler, method, args_dict):
     return result
 
 
+def wrap_exception(exc):
+    return dict(exception=struct_to_json(exc))
+
+
 def call_method_wrapped(service, handler, method, args_dict):
+    # type: (any, any, str, dict) -> dict
+
     exception = None
     try:
         res = call_method_with_dict(service, handler, method, args_dict)
@@ -71,4 +77,4 @@ def call_method_wrapped(service, handler, method, args_dict):
 
     # exception
     assert exception is not None
-    return dict(exception=struct_to_json(exception))
+    return wrap_exception(exception)
