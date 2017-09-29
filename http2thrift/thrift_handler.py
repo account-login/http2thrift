@@ -150,6 +150,11 @@ class ThriftHandler(object):
 
     def get_service(self, thrift_file, service_name):
         module = self.get_thrift_module(thrift_file)
+        if service_name == '*':
+            services = module.__thrift_meta__['services']
+            if len(services) == 1:
+                return services[0]
+
         try:
             return getattr(module, service_name)
         except AttributeError:
