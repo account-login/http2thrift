@@ -1,6 +1,7 @@
 from __future__ import (unicode_literals, print_function, division, absolute_import)
 
 import traceback
+from typing import Any
 
 from thriftpy.thrift import TApplicationException, TException
 from thriftpy.protocol.json import struct_to_json, struct_to_obj
@@ -63,7 +64,7 @@ def wrap_exception(exc):
 
 
 def call_method_wrapped(service, handler, method, args_dict):
-    # type: (any, any, str, dict) -> dict
+    # type: (Any, Any, str, dict) -> dict
 
     exception = None
     try:

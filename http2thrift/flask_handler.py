@@ -41,3 +41,10 @@ def thrift_call(thrift_file, service, method):
         return error_response(str(exc), 404)
     else:
         return json_response(result)
+
+
+@app.route('/api/thrift/', methods=['GET'])
+@app.route('/api/thrift/<path:thrift_file>', methods=['GET'])
+def list_services(thrift_file=None):
+    info = get_handler().list_services(thrift_file)
+    return json_response(dict(services=info))
