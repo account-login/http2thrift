@@ -4,7 +4,9 @@ import traceback
 from typing import Any
 
 from thriftpy.thrift import TApplicationException, TException
-from thriftpy.protocol.json import struct_to_json, struct_to_obj
+from thriftpy.protocol.json import struct_to_obj
+
+from http2thrift.protocol import struct_to_json
 
 
 def get_args_obj(service, method, args_dict):
