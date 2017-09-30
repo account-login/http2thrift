@@ -1,6 +1,7 @@
 from __future__ import (unicode_literals, print_function, division, absolute_import)
 
 import json
+from functools import wraps
 
 from flask import request, make_response
 
@@ -22,7 +23,21 @@ def error_response(msg, code):
     return json_response(dict(error=msg), code=code)
 
 
+def json_api(f):
+    @wraps(f)
+    def g(*args, **kwargs):
+        try:
+            result = f(*args, **kwargs)
+        except ResourceNotFound as exc:
+            return error_response(str(exc), 404)
+        else:
+            return json_response(result)
+
+    return g
+
+
 @app.route('/api/thrift/<path:thrift_file>:<service>:<method>', methods=['POST'])
+@json_api
 def thrift_call(thrift_file, service, method):
     req_dict = json.loads(request.get_data(as_text=True))
     host = req_dict.get('host', '127.0.0.1')
@@ -34,17 +49,18 @@ def thrift_call(thrift_file, service, method):
     req = ThriftRequest(
         host=host, port=port,
         thrift_file=thrift_file, service=service, method=method, args=args_dict)
-
-    try:
-        result = get_handler().call(req)
-    except ResourceNotFound as exc:
-        return error_response(str(exc), 404)
-    else:
-        return json_response(result)
+    return get_handler().call(req)
 
 
 @app.route('/api/thrift/', methods=['GET'])
 @app.route('/api/thrift/<path:thrift_file>', methods=['GET'])
+@json_api
 def list_services(thrift_file=None):
     info = get_handler().list_services(thrift_file)
-    return json_response(dict(services=info))
+    return dict(services=info)
+
+
+@app.route('/api/thrift/<path:thrift_file>:<service>:<method>/sample', methods=['GET'])
+@json_api
+def thrift_sample(thrift_file, service, method):
+    return get_handler().get_sample(thrift_file, service, method)

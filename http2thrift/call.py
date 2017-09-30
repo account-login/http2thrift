@@ -1,22 +1,11 @@
 from __future__ import (unicode_literals, print_function, division, absolute_import)
 
 import traceback
-from typing import Any
 
 from thriftpy.thrift import TApplicationException, TException
-from thriftpy.protocol.json import struct_to_obj
+from typing import Any
 
-from http2thrift.protocol import struct_to_json
-
-
-def get_args_obj(service, method, args_dict):
-    args_obj = getattr(service, method + '_args')()
-    struct_to_obj(args_dict, args_obj)
-    return args_obj
-
-
-def get_result_obj(service, method):
-    return getattr(service, method + '_result')()
+from http2thrift.thrift_util import struct_to_json, get_args_obj, get_result_obj
 
 
 def handle_exception(exc, result):

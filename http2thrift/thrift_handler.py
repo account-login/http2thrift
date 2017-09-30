@@ -14,6 +14,7 @@ from thriftpy.transport import TFramedTransportFactory
 
 from http2thrift import get_logger
 from http2thrift.call import call_method_wrapped
+from http2thrift.thrift_util import generate_sample_struct, get_args_obj, get_result_obj, struct_to_json
 
 
 L = get_logger(__name__)
@@ -103,6 +104,15 @@ class ThriftHandler(object):
     def list_services(self, path=None):
         return list(self.list_modules_info(path))
 
+    def get_sample(self, thrift_file, service_name, method):
+        service = self.get_service(thrift_file, service_name)
+
+        args = get_args_obj(service, method, dict())
+        result = get_result_obj(service, method)
+        generate_sample_struct(args, type(args))
+        generate_sample_struct(result, type(result))
+        return dict(args=struct_to_json(args), result=struct_to_json(result))
+
     # private
     def list_modules_info(self, path=None):
         # type: () -> dict
@@ -141,7 +151,7 @@ class ThriftHandler(object):
 
         if path not in self.path2thrift or self.monitor.is_changed(path):
             fullpath = os.path.join(self.dir, path)
-            L.debug('loading thrift file: %s', fullpath)
+            L.debug('loading thrift file: "%s"', fullpath)
             module = thriftpy.parser.parse(str(fullpath), enable_cache=False)   # path must be str in py2
             self.path2thrift[path] = module
             self.monitor.access(path)
