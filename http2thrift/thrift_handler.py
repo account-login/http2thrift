@@ -2,7 +2,7 @@ from __future__ import (unicode_literals, print_function, division, absolute_imp
 
 import os
 import fnmatch
-from collections import namedtuple
+from collections import namedtuple, OrderedDict
 import threading
 from typing import Any, Dict, AnyStr
 
@@ -54,7 +54,7 @@ class FileMonitor(object):
         # TODO: watchdog
 
     def list(self):
-        return self.path2status.iterkeys()
+        return self.path2status.keys()
 
     def contains(self, path):
         exist = os.path.normpath(path) in self.path2status
@@ -111,7 +111,10 @@ class ThriftHandler(object):
         result = get_result_obj(service, method)
         generate_sample_struct(args, type(args))
         generate_sample_struct(result, type(result))
-        return dict(args=struct_to_json(args), result=struct_to_json(result))
+        return OrderedDict([
+            ('args', struct_to_json(args)),
+            ('result', struct_to_json(result))
+        ])
 
     # private
     def list_modules_info(self, path=None):
@@ -133,7 +136,10 @@ class ThriftHandler(object):
                 svc.__name__: list(self.list_methods_info(svc))
                 for svc in services
             }
-            yield dict(path=path, services=services_info)
+            yield OrderedDict([
+                ('path', path),
+                ('services', services_info)
+            ])
 
     def list_methods_info(self, service):
         for method_name in service.thrift_services:
