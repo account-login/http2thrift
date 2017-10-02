@@ -34,16 +34,16 @@ class ThriftRequest(BaseRequest):
     pass
 
 
-def glob_recursive(dir, pattern):
-    for root, dirnames, filenames in os.walk(dir, followlinks=True):
+def glob_recursive(dirpath, pattern):
+    for root, dirnames, filenames in os.walk(dirpath, followlinks=True):
         for filename in fnmatch.filter(filenames, pattern):
             yield os.path.join(root, filename)
 
 
 class FileMonitor(object):
-    def __init__(self, dir, pattern):
+    def __init__(self, dirpath, pattern):
         # type: (AnyStr, AnyStr) -> None
-        self.dir = dir
+        self.dir = dirpath
         self.pattern = pattern
 
         # is file changed after last access
@@ -160,9 +160,9 @@ class SkipBadThriftFile(Exception):
 
 class ThriftHandler(object):
     # public
-    def __init__(self, dir):
-        self.dir = dir
-        self.monitor = FileMonitor(dir, '*.thrift')
+    def __init__(self, dirpath):
+        self.dir = dirpath
+        self.monitor = FileMonitor(dirpath, '*.thrift')
         # cached thrift module
         self.path2thrift = dict()
 
@@ -206,7 +206,7 @@ class ThriftHandler(object):
 
         for path in pathlist:
             try:
-                module = self.get_thrift_module(path)
+                thrift = self.get_thrift_module(path)
             except ThriftParserError:
                 L.exception('bad thrift file: "%s"', path)
                 continue
@@ -214,7 +214,7 @@ class ThriftHandler(object):
                 L.debug('skip bad thrift file: "%s"', path)
                 continue
 
-            services = module.__thrift_meta__['services']
+            services = thrift.__thrift_meta__['services']
             services_info = {
                 svc.__name__: list(self.list_methods_info(svc))
                 for svc in services
@@ -243,8 +243,8 @@ class ThriftHandler(object):
             self.monitor.access(path)
 
             L.debug('loading thrift file: "%s"', fullpath)
-            module = thriftpy.parser.parse(str(fullpath), enable_cache=False)   # path must be str in py2
-            self.path2thrift[path] = module
+            thrift = thriftpy.parser.parse(str(fullpath), enable_cache=False)   # path must be str in py2
+            self.path2thrift[path] = thrift
 
         if path not in self.path2thrift:
             raise SkipBadThriftFile('not loading bad thrift file: "%s"' % path)
@@ -252,19 +252,20 @@ class ThriftHandler(object):
         return self.path2thrift[path]
 
     def get_service(self, thrift_file, service_name):
-        module = self.get_thrift_module(thrift_file)
+        thrift = self.get_thrift_module(thrift_file)
         if service_name == '*':
-            services = module.__thrift_meta__['services']
+            services = thrift.__thrift_meta__['services']
             if len(services) == 1:
                 return services[0]
 
         try:
-            return getattr(module, service_name)
+            return getattr(thrift, service_name)
         except AttributeError:
             raise ResourceNotFound('service "%s" not found in "%s"' % (service_name, thrift_file))
 
 
 _handler = None
+
 
 def get_handler():
     global _handler
