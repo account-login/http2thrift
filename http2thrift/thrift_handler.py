@@ -83,6 +83,10 @@ class FileMonitor(object):
         self.path2status[os.path.normpath(path)] = True
 
 
+class SkipBadThriftFile(Exception):
+    pass
+
+
 class ThriftHandler(object):
     # public
     def __init__(self, dir):
@@ -97,12 +101,14 @@ class ThriftHandler(object):
     def call(self, req):
         # type: (ThriftRequest) -> dict
         service = self.get_service(req.thrift_file, req.service)
-        client = self.get_client(service, req.host, req.port)
+        client = self.get_client(service, req.host, req.port)   # FIXME: capture transport error
 
         return call_method_wrapped(service, client, req.method, req.args)
 
     def list_services(self, path=None):
         return list(self.list_modules_info(path))
+
+    # TODO: search service by kw
 
     def get_sample(self, thrift_file, service_name, method):
         service = self.get_service(thrift_file, service_name)
@@ -130,6 +136,9 @@ class ThriftHandler(object):
             except ThriftParserError:
                 L.exception('bad thrift file: "%s"', path)
                 continue
+            except SkipBadThriftFile:
+                L.debug('skip bad thrift file: "%s"', path)
+                continue
 
             services = module.__thrift_meta__['services']
             services_info = {
@@ -155,12 +164,16 @@ class ThriftHandler(object):
         if not self.monitor.contains(path):
             raise ResourceNotFound('thrift file not found: "%s"' % path)
 
-        if path not in self.path2thrift or self.monitor.is_changed(path):
+        if path not in self.path2thrift and self.monitor.is_changed(path):
             fullpath = os.path.join(self.dir, path)
+            self.monitor.access(path)
+
             L.debug('loading thrift file: "%s"', fullpath)
             module = thriftpy.parser.parse(str(fullpath), enable_cache=False)   # path must be str in py2
             self.path2thrift[path] = module
-            self.monitor.access(path)
+
+        if path not in self.path2thrift:
+            raise SkipBadThriftFile('not loading bad thrift file: "%s"' % path)
 
         return self.path2thrift[path]
 
