@@ -58,10 +58,11 @@ def map_to_json(val, spec):
     else:
         value_type, value_spec = spec[1]
 
-    for k, v in val.items():
-        key = json_value(key_type, k, key_spec)
-        value = json_value(value_type, v, value_spec)
-        res.append(OrderedDict([('key', key), ('value', value)]))
+    if val is not None:     # may be optional field?
+        for k, v in val.items():
+            key = json_value(key_type, k, key_spec)
+            value = json_value(value_type, v, value_spec)
+            res.append(OrderedDict([('key', key), ('value', value)]))
 
     return res
 
@@ -72,11 +73,17 @@ def list_to_json(val, spec):
     else:
         elem_type, type_spec = spec, None
 
-    return [json_value(elem_type, i, type_spec) for i in val]
+    if val is None:
+        return []
+    else:
+        return [json_value(elem_type, i, type_spec) for i in val]
 
 
 def struct_to_json(val):
     outobj = OrderedDict()
+    if val is None:
+        return outobj
+
     for fid in sorted(val.thrift_spec.keys()):
         field_spec = val.thrift_spec[fid]
         field_type, field_name = field_spec[:2]
