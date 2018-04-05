@@ -7,7 +7,6 @@ from __future__ import (unicode_literals, print_function, division, absolute_imp
 from collections import OrderedDict
 from typing import Optional, List
 
-from thriftpy.protocol.json import struct_to_obj
 from thriftpy.thrift import TType
 
 INTEGER = (TType.BYTE, TType.I16, TType.I32, TType.I64)
@@ -44,6 +43,26 @@ def json_value(ttype, val, spec=None):
         return map_to_json(val, spec)
 
 
+def obj_value(ttype, val, spec=None):
+    if ttype in INTEGER:
+        return int(val)
+
+    if ttype in FLOAT:
+        return float(val)
+
+    if ttype in (TType.STRING, TType.BOOL):
+        return val
+
+    if ttype == TType.STRUCT:
+        return struct_to_obj(val, spec())
+
+    if ttype in (TType.SET, TType.LIST):
+        return list_to_obj(val, spec)
+
+    if ttype == TType.MAP:
+        return map_to_obj(val, spec)
+
+
 def map_to_json(val, spec):
     res = []
     if isinstance(spec[0], int):
@@ -67,6 +86,29 @@ def map_to_json(val, spec):
     return res
 
 
+def map_to_obj(val, spec):
+    res = {}
+    if isinstance(spec[0], int):
+        key_type, key_spec = spec[0], None
+    else:
+        key_type, key_spec = spec[0]
+
+    if isinstance(spec[1], int):
+        value_type, value_spec = spec[1], None
+    else:
+        value_type, value_spec = spec[1]
+
+    if isinstance(val, dict):   # new map format
+        for k, v in val.items():
+            res[obj_value(key_type, k, key_spec)] = obj_value(value_type, v, value_spec)
+    else:
+        for v in val:
+            res[obj_value(key_type, v["key"], key_spec)] = obj_value(
+                value_type, v["value"], value_spec)
+
+    return res
+
+
 def list_to_json(val, spec):
     if isinstance(spec, tuple):
         elem_type, type_spec = spec
@@ -77,6 +119,15 @@ def list_to_json(val, spec):
         return []
     else:
         return [json_value(elem_type, i, type_spec) for i in val]
+
+
+def list_to_obj(val, spec):
+    if isinstance(spec, tuple):
+        elem_type, type_spec = spec
+    else:
+        elem_type, type_spec = spec, None
+
+    return [obj_value(elem_type, i, type_spec) for i in val]
 
 
 def struct_to_json(val):
@@ -98,6 +149,22 @@ def struct_to_json(val):
         outobj[field_name] = json_value(field_type, v, field_type_spec)
 
     return outobj
+
+
+def struct_to_obj(val, obj):
+    for fid, field_spec in obj.thrift_spec.items():
+        field_type, field_name = field_spec[:2]
+
+        if len(field_spec) <= 3:
+            field_type_spec = None
+        else:
+            field_type_spec = field_spec[2]
+
+        if field_name in val:
+            setattr(obj, field_name,
+                    obj_value(field_type, val[field_name], field_type_spec))
+
+    return obj
 
 
 def get_seq(seq):
