@@ -10,6 +10,7 @@ from http2thrift.thrift_handler import get_handler, ThriftRequest, ResourceNotFo
 
 
 app = get_app()
+get_handler()   # init thrift handler
 
 
 def json_response(dct, code=200):
