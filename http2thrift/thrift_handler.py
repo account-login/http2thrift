@@ -301,7 +301,9 @@ _handler = None
 def get_handler():
     global _handler
     if _handler is None:
-        _handler = ThriftHandler('.')
+        # TODO: supports multiple path
+        dirpath = os.environ.get('HTTP2THRIFT_PATH', '.')
+        _handler = ThriftHandler(dirpath)
         _handler.start()
 
     return _handler
