@@ -4,12 +4,19 @@ Copied from thriftpy.protocol.json
 
 from __future__ import (unicode_literals, print_function, division, absolute_import)
 
+import nativetypes
 from collections import OrderedDict
 from typing import Optional, List
 
 from thriftpy.thrift import TType
 
-INTEGER = (TType.BYTE, TType.I16, TType.I32, TType.I64)
+# TODO: remove nativetypes dependency
+INTEGER_CAST = {
+    TType.BYTE: nativetypes.int8,
+    TType.I16: nativetypes.int16,
+    TType.I32: nativetypes.int32,
+    TType.I64: nativetypes.int64,
+}
 FLOAT = (TType.DOUBLE,)
 
 
@@ -24,7 +31,7 @@ def get_result_obj(service, method):
 
 
 def json_value(ttype, val, spec=None):
-    if ttype in INTEGER or ttype in FLOAT:
+    if ttype in INTEGER_CAST or ttype in FLOAT:
         return val if val is not None else 0
 
     if ttype == TType.STRING:
@@ -44,8 +51,8 @@ def json_value(ttype, val, spec=None):
 
 
 def obj_value(ttype, val, spec=None):
-    if ttype in INTEGER:
-        return int(val)
+    if ttype in INTEGER_CAST:
+        return INTEGER_CAST[ttype](int(val))
 
     if ttype in FLOAT:
         return float(val)
@@ -179,7 +186,7 @@ def get_seq(seq):
 
 def generate_sample_obj(ttype, obj, spec, seq=None):
     if obj is None:
-        if ttype in INTEGER:
+        if ttype in INTEGER_CAST:
             return get_seq(seq) + 123
         if ttype in FLOAT:
             return (get_seq(seq) + 456) / 10
