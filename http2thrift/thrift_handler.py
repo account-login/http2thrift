@@ -211,6 +211,7 @@ class ThriftHandler(object):
     def __init__(self, dirpath):
         self.dir = dirpath
         self.index = ThriftIndexer(dirpath)
+        self.key2client = threading.local()
 
     def start(self):
         threading.Thread(target=self._collector_thread).start()
@@ -228,8 +229,12 @@ class ThriftHandler(object):
             client = self.get_client(service, req.host, req.port)
         except TException as texc:  # TTransportException and etc
             return wrap_exception(texc)
-        else:
-            return call_method_wrapped(service, client, req.method, req.args)
+
+        # FIXME: retry send error
+        rv = call_method_wrapped(service, client, req.method, req.args)
+        if 'exception' in rv:
+            self.drop_client(service, req.host, req.port, client)
+        return rv
 
     def list_services(self, path=None):
         return list(self.list_modules_info(path))
@@ -274,8 +279,22 @@ class ThriftHandler(object):
 
     def get_client(self, service, host, port):
         # type: (Any, str, int) -> TClient
-        # TODO: re-use client
-        return make_client(service, host=host, port=port, trans_factory=TFramedTransportFactory())
+
+        if not hasattr(self.key2client, 'd'):
+            self.key2client.d = dict()
+        d = self.key2client.d
+
+        key = service, host, port
+        if key not in d:
+            d[key] = make_client(service, host=host, port=port, trans_factory=TFramedTransportFactory())
+        return d[key]
+
+    def drop_client(self, service, host, port, client):
+        L.debug('drop client')
+        try:
+            client.close()
+        finally:
+            self.key2client.d.pop((service, host, port))
 
     def get_service(self, thrift_file_pattern, service_pattern, method):
         path = None
