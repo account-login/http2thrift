@@ -286,7 +286,8 @@ class ThriftHandler(object):
 
         key = service, host, port
         if key not in d:
-            d[key] = make_client(service, host=host, port=port, trans_factory=TFramedTransportFactory())
+            # TODO: adjustable timeout
+            d[key] = make_client(service, host=host, port=port, trans_factory=TFramedTransportFactory(), timeout=10000)
         return d[key]
 
     def drop_client(self, service, host, port, client):
