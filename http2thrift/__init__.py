@@ -3,8 +3,6 @@ from __future__ import (unicode_literals, print_function, division, absolute_imp
 import logging
 
 
-# TODO: cli
-# TODO: yaml
 # TODO: requirements.txt
 # TODO: non-utf8 thrift file
 

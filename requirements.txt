@@ -1,6 +1,5 @@
 thriftpy
 flask
 requests
-PyYAML
 nativetypes
 typing; python_version < '3.5'

@@ -8,8 +8,6 @@ import pprint
 import sys
 from typing import Any, Text, List
 
-import yaml
-
 try:
     from urlparse import urlparse
 except ImportError:
@@ -123,10 +121,7 @@ def main():
                 sys.exit(2)
             thrift_host, thrift_port = split_host_port(args.server)
 
-            try:
-                args_dict = yaml.load(args.payload)
-            except yaml.YAMLError:
-                args_dict = json.loads(args.payload)
+            args_dict = json.loads(args.payload)
             rv = call_method(http_host, http_port, thrift_host, thrift_port, urlpath, args_dict)
 
         print(json.dumps(rv, indent=2))     # TODO: colorize
