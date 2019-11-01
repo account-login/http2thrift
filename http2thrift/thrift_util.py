@@ -8,14 +8,14 @@ import nativetypes
 from collections import OrderedDict
 from typing import Optional, List
 
-from thriftpy.thrift import TType
+from http2thrift.thriftpy.thrift import TType
 
 # TODO: remove nativetypes dependency
 INTEGER_CAST = {
-    TType.BYTE: nativetypes.int8,
-    TType.I16: nativetypes.int16,
-    TType.I32: nativetypes.int32,
-    TType.I64: nativetypes.int64,
+    TType.BYTE: lambda x: int(nativetypes.int8(x)),
+    TType.I16: lambda x: int(nativetypes.int16(x)),
+    TType.I32: lambda x: int(nativetypes.int32(x)),
+    TType.I64: lambda x: int(nativetypes.int64(x)),
 }
 FLOAT = (TType.DOUBLE,)
 

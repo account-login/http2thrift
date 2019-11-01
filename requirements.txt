@@ -1,4 +1,5 @@
-thriftpy
+# thriftpy
+ply>=3.4,<4.0   # from thriftpy
 flask
 requests
 nativetypes

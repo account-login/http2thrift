@@ -18,13 +18,13 @@ import requests
 
 DEFAULT_HTTP_HOST = '127.0.0.1'
 DEFAULT_HTTP_PORT = 5001
-DEFAUL_HTTP_SERVER = '%s:%d' % (DEFAULT_HTTP_HOST, DEFAULT_HTTP_PORT)
+DEFAULT_HTTP_SERVER = '%s:%d' % (DEFAULT_HTTP_HOST, DEFAULT_HTTP_PORT)
 
 
 def get_args():
     ap = argparse.ArgumentParser()
     ap.add_argument('-s', '--server', help='thrift server')
-    ap.add_argument('-H', '--http', default=DEFAUL_HTTP_SERVER, help='http2thrift server')
+    ap.add_argument('-H', '--http', default=DEFAULT_HTTP_SERVER, help='http2thrift server')
     ap.add_argument('-m', '--method', required=True, help='method pattern')
     ap.add_argument('payload', nargs='?', default=None, help='payload')
 

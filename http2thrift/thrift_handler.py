@@ -7,11 +7,10 @@ from collections import namedtuple, OrderedDict, defaultdict
 import threading
 from typing import Any, Dict
 
-import thriftpy
-import thriftpy.parser
-from thriftpy.thrift import TApplicationException, TException
-from thriftpy.rpc import make_client, TClient
-from thriftpy.transport import TFramedTransportFactory
+from http2thrift.thriftpy.parser import parse as thrift_parse
+from http2thrift.thriftpy.thrift import TApplicationException, TException
+from http2thrift.thriftpy.rpc import make_client, TClient
+from http2thrift.thriftpy.transport import TFramedTransportFactory
 
 from http2thrift import get_logger
 from http2thrift.thrift_util import generate_sample_struct, get_args_obj, get_result_obj, struct_to_json
@@ -132,7 +131,7 @@ def _thrift_service_list_method(thrift_svc):
 
 
 def _thrift_parse_module(thrift_file):
-    return thriftpy.parser.parse(str(thrift_file), enable_cache=False)  # path must be str in py2
+    return thrift_parse(str(thrift_file), enable_cache=False)   # path must be str in py2
 
 
 class ThriftIndexer(object):
